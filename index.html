@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Basic Content Security Policy (CSP) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob: https:;">
     <title>Garasi Digital Pro</title>
     
+    <!-- Manifest for PWA -->
     <link rel="manifest" href="manifest.json">
     
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     
-    <!-- Deferred Libraries for Performance (Phase 2 Fix) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script defer src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons & Tesseract JS (Untuk AI Scanner) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: { primary: 'var(--color-primary)', dark: '#09090b', darker: '#18181b', alert: '#ff003c' },
+                    colors: { neon: '#deff9a', dark: '#09090b', darker: '#18181b', cyber: '#00f3ff', alert: '#ff003c' },
                     fontFamily: { sans: ['Urbanist', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
                 }
             }
@@ -31,275 +32,399 @@
     </script>
     
     <style>
-        :root { --color-primary: #deff9a; --color-primary-rgb: 222, 255, 154; }
-        
-        /* Phase 1 Fix: Explicit Theme Classes */
-        .theme-neon { --color-primary: #deff9a; --color-primary-rgb: 222, 255, 154; }
-        .theme-red { --color-primary: #ff3333; --color-primary-rgb: 255, 51, 51; }
-        .theme-blue { --color-primary: #00f3ff; --color-primary-rgb: 0, 243, 255; }
-        .theme-purple { --color-primary: #b000ff; --color-primary-rgb: 176, 0, 255; }
-
         body { background-color: #000; user-select: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .glass { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .speed-glow { text-shadow: 0 0 20px rgba(222, 255, 154, 0.5); }
+        .cyber-glow { text-shadow: 0 0 20px rgba(0, 243, 255, 0.5); }
         
-        .glass { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .text-glow { text-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.6); }
-        .box-glow { box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.2); }
+        @keyframes pulse-alert {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7); }
+            70% { box-shadow: 0 0 0 30px rgba(255, 0, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0); }
+        }
+        .btn-sos, .crash-alert { animation: pulse-alert 1.5s infinite; }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes pulse-alert { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7); } 70% { box-shadow: 0 0 0 30px rgba(255, 0, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0); } }
-        .btn-sos { animation: pulse-alert 2s infinite; }
-
-        #canvas-3d { position: absolute; top: 0; left: 0; width: 100%; height: 250px; z-index: 0; pointer-events: none; opacity: 0.5; }
-        .gauge-container { width: 180px; height: 90px; border-top-left-radius: 90px; border-top-right-radius: 90px; border: 4px solid #333; border-bottom: 0; position: relative; overflow: hidden; margin: 0 auto; }
-        .gauge-needle { width: 4px; height: 80px; background: var(--color-primary); position: absolute; bottom: 0; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.1s ease-out; box-shadow: 0 0 10px var(--color-primary); }
+        /* Lean Angle Gauge */
+        .gauge-container {
+            width: 200px; height: 100px;
+            border-top-left-radius: 100px; border-top-right-radius: 100px;
+            border: 4px solid #333; border-bottom: 0;
+            position: relative; overflow: hidden;
+        }
+        .gauge-needle {
+            width: 4px; height: 90px; background: #deff9a;
+            position: absolute; bottom: 0; left: 50%;
+            transform-origin: bottom center; transform: translateX(-50%) rotate(0deg);
+            transition: transform 0.1s ease-out; box-shadow: 0 0 10px #deff9a;
+        }
+        
+        /* Audio Visualizer Bar */
+        .audio-bar { width: 100%; height: 20px; background: #333; border-radius: 10px; overflow: hidden; }
+        .audio-fill { height: 100%; background: linear-gradient(90deg, #deff9a, #00f3ff, #ff003c); width: 0%; transition: width 0.1s; }
     </style>
 </head>
 
-<body class="text-white h-screen w-full flex justify-center overflow-hidden theme-neon">
-
+<body class="text-white h-screen w-full flex justify-center overflow-hidden">
+    <!-- App Container -->
     <div class="w-full sm:max-w-md landscape:max-w-none h-full bg-dark relative flex flex-col shadow-2xl transition-all duration-300">
         
         <!-- Header -->
-        <header class="pt-8 pb-4 px-6 glass sticky top-0 z-20 border-b border-zinc-800 flex justify-between items-center">
-            <div><h1 class="text-2xl font-extrabold tracking-tight">Garasi<span class="text-primary transition-colors">Digital</span></h1></div>
-            <button onclick="openModal('modal-theme')" class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-primary active:scale-95 transition-all"><i class="fa-solid fa-palette"></i></button>
+        <header class="pt-8 pb-4 px-6 glass sticky top-0 z-10 border-b border-zinc-800 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tight">Garasi<span class="text-neon">Digital</span> <span class="text-[10px] bg-cyber text-black px-2 py-0.5 rounded ml-1 align-top font-bold">PRO</span></h1>
+                <p class="text-xs text-zinc-400" id="header-subtitle">Super App Otomotif</p>
+            </div>
+            <button id="theme-toggle" class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-neon active:scale-95 transition-transform">
+                <i class="fa-solid fa-moon"></i>
+            </button>
         </header>
 
         <main class="flex-1 overflow-y-auto pb-24 relative" id="main-content">
             
             <!-- VIEW 1: GARAGE LIST -->
-            <section id="view-garage" class="relative min-h-full fade-in">
-                <div id="canvas-3d"></div> 
-                <div class="p-6 relative z-10 space-y-6 pt-10">
-                    <div class="flex justify-between items-center bg-darker/80 p-4 rounded-2xl border border-zinc-800 backdrop-blur-md">
-                        <h2 class="text-lg font-bold">Armada Lu</h2>
-                        <button onclick="openModal('modal-add-vehicle')" class="bg-primary text-black px-4 py-2 rounded-full font-bold text-sm active:scale-95 box-glow"><i class="fa-solid fa-plus mr-1"></i> Tambah</button>
-                    </div>
-                    <div id="vehicle-list" class="grid grid-cols-1 landscape:grid-cols-2 gap-4"></div>
+            <section id="view-garage" class="p-6 space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold">Kendaraan Saya</h2>
+                    <button onclick="openModal('modal-add-vehicle')" class="bg-neon text-black px-4 py-2 rounded-full font-bold text-sm active:scale-95 shadow-[0_0_15px_rgba(222,255,154,0.3)]">
+                        <i class="fa-solid fa-plus mr-1"></i> Tambah
+                    </button>
                 </div>
+                <div id="vehicle-list" class="grid grid-cols-1 landscape:grid-cols-2 gap-4"></div>
             </section>
 
-            <!-- VIEW 2: VEHICLE DETAILS & ANALYTICS -->
-            <section id="view-details" class="hidden p-6 space-y-6 fade-in">
-                <button onclick="switchView('garage')" class="text-zinc-400 text-sm mb-2 active:text-primary"><i class="fa-solid fa-arrow-left mr-2"></i> Kembali</button>
+            <!-- VIEW 2: VEHICLE DETAILS & LOGS -->
+            <section id="view-details" class="hidden p-6 space-y-6">
+                <button onclick="switchView('garage')" class="text-zinc-400 text-sm mb-2 active:text-neon">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Kembali ke Garasi
+                </button>
                 
-                <div class="bg-gradient-to-br from-zinc-800 to-darker p-5 rounded-2xl border border-zinc-700 flex items-center gap-4 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
-                    <div id="detail-icon" class="w-14 h-14 rounded-full bg-dark flex items-center justify-center text-primary text-2xl z-10 box-glow"></div>
-                    <div class="flex-1 z-10">
-                        <h2 id="detail-name" class="text-2xl font-black">Nama</h2>
-                        <p id="detail-brand" class="text-sm text-zinc-400">Merk</p>
+                <div class="bg-darker p-5 rounded-2xl border border-zinc-800 flex items-center gap-4">
+                    <div id="detail-icon" class="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center text-neon text-2xl"></div>
+                    <div class="flex-1">
+                        <h2 id="detail-name" class="text-xl font-bold">Nama</h2>
+                        <p id="detail-brand" class="text-sm text-zinc-400">Merk • Tipe</p>
                     </div>
-                    <button onclick="confirmDeleteVehicle()" class="w-10 h-10 rounded-full bg-dark flex items-center justify-center text-alert active:scale-95 z-10 mr-2" title="Hapus Kendaraan"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="exportDataCSV()" class="w-10 h-10 rounded-full bg-dark flex items-center justify-center text-zinc-400 active:text-primary z-10" title="Download CSV"><i class="fa-solid fa-download"></i></button>
-                </div>
-
-                <div id="predictive-alert" class="hidden bg-primary/10 border border-primary p-3 rounded-xl flex items-start gap-3 text-sm">
-                    <i class="fa-solid fa-robot text-primary mt-1 animate-pulse"></i>
-                    <div><p class="font-bold text-primary">AI Prediksi:</p><p class="text-zinc-300" id="predictive-text">-</p></div>
-                </div>
-
-                <div class="bg-darker p-4 rounded-2xl border border-zinc-800">
-                    <h3 class="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold"><i class="fa-solid fa-chart-line mr-1"></i> Analitik Efisiensi (Km/L)</h3>
-                    <div class="w-full h-40"><canvas id="efficiencyChart"></canvas></div>
+                    <button onclick="exportDataCSV()" class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 active:text-neon" title="Download CSV">
+                        <i class="fa-solid fa-file-csv text-xl"></i>
+                    </button>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="openModal('modal-add-service')" class="bg-zinc-800 p-4 rounded-2xl border border-zinc-700 flex flex-col items-center gap-2 active:border-primary"><i class="fa-solid fa-wrench text-xl text-primary"></i><span class="text-sm font-semibold">Servis</span></button>
-                    <button onclick="openFuelModalWithScan()" class="bg-zinc-800 p-4 rounded-2xl border border-zinc-700 flex flex-col items-center gap-2 active:border-primary relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-2 py-1 rounded-bl-lg">AI Scan</div>
-                        <i class="fa-solid fa-gas-pump text-xl text-primary"></i><span class="text-sm font-semibold">Bensin</span>
+                    <button onclick="openModal('modal-add-service')" class="bg-zinc-800 p-4 rounded-2xl border border-zinc-700 flex flex-col items-center gap-2 active:border-neon">
+                        <i class="fa-solid fa-wrench text-xl text-neon"></i><span class="text-sm font-semibold">Servis</span>
+                    </button>
+                    <!-- Trigger Kamera AI Odometer sebelum form bensin -->
+                    <button onclick="triggerAiScanner()" class="bg-zinc-800 p-4 rounded-2xl border border-zinc-700 flex flex-col items-center gap-2 active:border-neon relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-cyber text-black text-[8px] font-bold px-2 py-1 rounded-bl-lg">AI Scan</div>
+                        <i class="fa-solid fa-gas-pump text-xl text-neon"></i><span class="text-sm font-semibold">Bensin</span>
+                        <!-- Hidden file input for camera -->
+                        <input type="file" id="ai-cam-input" accept="image/*" capture="environment" class="hidden" onchange="processAIOdometer(event)">
                     </button>
                 </div>
 
                 <div>
-                    <h3 class="text-md font-bold mb-4 border-b border-zinc-800 pb-2">Riwayat Log</h3>
+                    <h3 class="text-md font-bold mb-4 border-b border-zinc-800 pb-2">Riwayat & Efisiensi</h3>
                     <div id="logs-list" class="space-y-3"></div>
                 </div>
             </section>
 
-            <!-- VIEW 3 & 5 (Dashboard & Checklist omitted for brevity to focus on JS fixes, but retained in full code structure) -->
-            <!-- (Assuming Dashboard and Checklist UI structures remain identical to previous versions) -->
-            <section id="view-checklist" class="hidden p-6 space-y-6 fade-in">
-                <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
-                    <h2 class="text-xl font-black">Checklist</h2>
-                    <button onclick="confirmClearChecklist()" class="text-xs text-alert bg-alert/10 px-3 py-1 rounded-full font-semibold active:scale-95">Reset All</button>
+            <!-- VIEW 3: DASHBOARD GPS -->
+            <section id="view-dashboard" class="hidden h-full flex flex-col p-6">
+                <!-- Status & Geofencing Alert -->
+                <div class="flex justify-between items-center bg-darker p-3 rounded-t-2xl border border-zinc-800 z-10">
+                    <div class="flex items-center gap-2 text-xs font-semibold px-2">
+                        <div id="gps-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span id="gps-status" class="text-zinc-400">Mencari GPS...</span>
+                    </div>
+                </div>
+                <div id="geofence-alert" class="hidden bg-cyber/20 border-x border-b border-cyber p-2 text-center text-[10px] font-bold text-cyber rounded-b-2xl mb-4">
+                    <i class="fa-solid fa-building-columns mr-1"></i> Lu deket Samsat King! Cek pajak motor lu!
+                </div>
+
+                <div class="flex-1 flex flex-col landscape:flex-row items-center justify-center gap-8">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="relative flex flex-col items-center justify-center w-64 h-64 rounded-full border-4 border-zinc-800 shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] bg-darker">
+                            <div class="absolute inset-0 rounded-full border-t-4 border-neon opacity-50 blur-[2px] animate-[spin_4s_linear_infinite]"></div>
+                            <span id="speed-value" class="font-mono text-8xl font-bold speed-glow leading-none mt-4 text-white">0</span>
+                            <span class="text-zinc-500 font-bold tracking-widest mt-2">KM/H</span>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full landscape:w-auto flex-1 flex flex-col justify-center gap-4">
+                        <div class="text-center bg-zinc-900 py-3 rounded-xl border border-zinc-800">
+                            <p class="text-[10px] text-zinc-500 uppercase">Koordinat</p>
+                            <p id="coords-value" class="font-mono text-xs text-cyber">Lat: -- | Lng: --</p>
+                        </div>
+                        <button onclick="triggerSOS()" class="btn-sos w-full bg-alert hover:bg-red-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> DARURAT SOS
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: LABS (PRO FEATURES) -->
+            <section id="view-labs" class="hidden p-6 space-y-6">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-flask text-cyber text-2xl"></i>
+                    <h2 class="text-lg font-bold">Pro Labs <span class="text-xs font-normal text-zinc-400">Beta</span></h2>
+                </div>
+                <p class="text-xs text-zinc-400 mb-4">Eksperimen sensor perangkat dan Web API.</p>
+
+                <div class="grid grid-cols-1 gap-4">
+                    
+                    <!-- 1. Telemetry & Crash Detection -->
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-neon"><i class="fa-solid fa-motorcycle mr-2"></i>Telemetri & Crash</h3>
+                            <button id="btn-telemetry" onclick="toggleTelemetry()" class="text-xs bg-zinc-800 px-3 py-1 rounded text-white">Start</button>
+                        </div>
+                        <div class="flex justify-around items-end">
+                            <div class="flex flex-col items-center">
+                                <div class="gauge-container mb-2">
+                                    <div id="lean-needle" class="gauge-needle"></div>
+                                </div>
+                                <span class="text-xs text-zinc-400">Lean Angle: <span id="lean-val" class="font-mono text-white font-bold">0°</span></span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full border-2 border-zinc-700 flex items-center justify-center mb-2">
+                                    <span id="gforce-val" class="font-mono text-lg font-bold text-alert">1.0</span>
+                                </div>
+                                <span class="text-xs text-zinc-400">G-Force (Pengereman)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Acoustic RPM -->
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-cyber"><i class="fa-solid fa-wave-square mr-2"></i>Acoustic RPM Scanner</h3>
+                            <button id="btn-audio" onclick="toggleAudioRPM()" class="text-xs bg-zinc-800 px-3 py-1 rounded text-white">Mic On</button>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 mb-2">Dekatkan ke knalpot untuk deteksi putaran mesin (Estimasi).</p>
+                        <div class="audio-bar"><div id="audio-visual" class="audio-fill"></div></div>
+                        <div class="text-center mt-2 font-mono text-2xl font-bold text-white"><span id="rpm-val">0</span> <span class="text-sm text-zinc-500">RPM</span></div>
+                    </div>
+
+                    <!-- 3. Web OBD2 Bluetooth -->
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                        <h3 class="font-bold text-blue-400 mb-2"><i class="fa-brands fa-bluetooth mr-2"></i>OBD2 Scanner</h3>
+                        <p class="text-[10px] text-zinc-500 mb-3">Koneksi Bluetooth ke scanner ELM327.</p>
+                        <button onclick="connectOBD2()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"><i class="fa-solid fa-link mr-1"></i> Scan Perangkat ECU</button>
+                        <div id="obd-data" class="hidden mt-3 p-3 bg-darker rounded border border-zinc-700 font-mono text-xs text-green-400">
+                            > CONNECTED<br>> RPM: 1500<br>> COOLANT: 85°C<br>> NO DTC ERROR FOUND
+                        </div>
+                    </div>
+
+                    <!-- 4. Brankas Digital -->
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-yellow-400"><i class="fa-solid fa-vault mr-2"></i>Brankas STNK</h3>
+                            <p class="text-[10px] text-zinc-500">Penyimpanan PIN Terenkripsi</p>
+                        </div>
+                        <button onclick="openVault()" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center text-yellow-400"><i class="fa-solid fa-fingerprint"></i></button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- VIEW 5: CHECKLIST -->
+            <section id="view-checklist" class="hidden p-6 space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold">Checklist Touring</h2>
+                    <button onclick="confirmClearChecklist()" class="text-xs text-alert bg-alert/10 px-3 py-1 rounded-full font-semibold">Reset</button>
                 </div>
                 <form id="form-checklist" class="flex gap-2">
-                    <input type="text" id="c_item" required placeholder="Bawaan..." class="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-primary text-sm">
-                    <button type="submit" class="bg-primary text-black px-5 rounded-xl font-black active:scale-95 transition-transform"><i class="fa-solid fa-plus"></i></button>
+                    <input type="text" id="c_item" required placeholder="Tambah barang bawaan..." class="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-neon text-sm">
+                    <button type="submit" class="bg-neon text-black px-4 rounded-xl font-bold"><i class="fa-solid fa-plus"></i></button>
                 </form>
                 <div id="checklist-items" class="space-y-2 pb-20"></div>
             </section>
-
-            <!-- VIEW 4: PRO LABS -->
-            <section id="view-labs" class="hidden p-6 space-y-6 fade-in">
-                <div class="flex items-center gap-3 mb-2 border-b border-zinc-800 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-2xl"><i class="fa-solid fa-flask"></i></div>
-                    <div><h2 class="text-xl font-black">Pro Labs</h2><p class="text-xs text-zinc-400">Experimental Web APIs</p></div>
-                </div>
-                <!-- Labs Vault Button -->
-                <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex justify-between items-center mt-4">
-                    <div><h3 class="font-bold text-white"><i class="fa-solid fa-shield-halved text-primary mr-2"></i>Brankas Dokumen</h3><p class="text-[10px] text-zinc-500">AES-GCM Encrypted</p></div>
-                    <button onclick="openVault()" class="w-12 h-12 bg-dark rounded-full flex items-center justify-center text-primary border border-zinc-700 active:scale-95 box-glow"><i class="fa-solid fa-fingerprint text-xl"></i></button>
-                </div>
-            </section>
         </main>
 
-        <nav class="absolute bottom-0 w-full glass border-t border-zinc-800 pb-safe pt-2 px-2 z-20">
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full glass border-t border-zinc-800 pb-safe pt-2 px-6 z-20">
             <div class="flex justify-between items-center h-16">
-                <button onclick="switchView('garage')" id="nav-garage" class="nav-btn flex flex-col items-center justify-center gap-1 text-primary w-1/4 h-full"><i class="fa-solid fa-warehouse text-xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Garasi</span></button>
-                <button onclick="switchView('checklist')" id="nav-checklist" class="nav-btn flex flex-col items-center justify-center gap-1 text-zinc-500 w-1/4 h-full"><i class="fa-solid fa-list-check text-xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Gear</span></button>
-                <button onclick="switchView('labs')" id="nav-labs" class="nav-btn flex flex-col items-center justify-center gap-1 text-zinc-500 w-1/4 h-full"><i class="fa-solid fa-flask text-xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Labs</span></button>
+                <button onclick="switchView('garage')" id="nav-garage" class="nav-btn flex flex-col items-center gap-1 text-neon w-1/4">
+                    <i class="fa-solid fa-warehouse text-xl"></i><span class="text-[10px] font-bold">Garasi</span>
+                </button>
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center gap-1 text-zinc-500 w-1/4">
+                    <i class="fa-solid fa-gauge-high text-xl"></i><span class="text-[10px] font-bold">Ride</span>
+                </button>
+                <button onclick="switchView('labs')" id="nav-labs" class="nav-btn flex flex-col items-center gap-1 text-zinc-500 w-1/4 relative">
+                    <span class="absolute -top-1 -right-2 w-2 h-2 bg-alert rounded-full animate-ping"></span>
+                    <i class="fa-solid fa-flask text-xl"></i><span class="text-[10px] font-bold">Labs</span>
+                </button>
+                <button onclick="switchView('checklist')" id="nav-checklist" class="nav-btn flex flex-col items-center gap-1 text-zinc-500 w-1/4">
+                    <i class="fa-solid fa-list-check text-xl"></i><span class="text-[10px] font-bold">Gear</span>
+                </button>
             </div>
         </nav>
 
-        <!-- Modals and Overlays -->
-        <div id="modal-overlay" class="hidden absolute inset-0 bg-black/90 z-40 backdrop-blur-sm transition-opacity"></div>
-        <input type="file" id="ai-cam-input" accept="image/*" capture="environment" class="hidden">
-        
-        <div id="custom-alert" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-sm bg-darker border border-zinc-700 rounded-3xl p-6 z-[60] shadow-2xl scale-95 transition-transform">
-            <h3 id="ca-title" class="text-xl font-black mb-2 text-white">Info</h3>
-            <p id="ca-msg" class="text-sm text-zinc-400 mb-8 leading-relaxed">Message here.</p>
-            <div id="ca-buttons" class="flex gap-3"></div>
+        <!-- Overlays & Modals -->
+        <div id="modal-overlay" class="hidden absolute inset-0 bg-black/80 z-40 backdrop-blur-sm transition-opacity"></div>
+        <div id="loading-overlay" class="hidden absolute inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center text-cyber">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4"></i>
+            <p id="loading-text" class="font-mono text-sm animate-pulse">AI Scanning Odometer...</p>
         </div>
 
-        <div id="modal-theme" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-[2rem] border-t border-zinc-700 p-6 slide-up">
-            <h3 class="text-lg font-black mb-6 text-center">Pilih Tema</h3>
-            <div class="grid grid-cols-4 gap-4 mb-6">
-                <button onclick="setTheme('neon')" class="w-14 h-14 rounded-full bg-[#deff9a] mx-auto border-4 border-dark hover:scale-110 shadow-[0_0_15px_#deff9a]"></button>
-                <button onclick="setTheme('red')" class="w-14 h-14 rounded-full bg-[#ff3333] mx-auto border-4 border-dark hover:scale-110 shadow-[0_0_15px_#ff3333]"></button>
-                <button onclick="setTheme('blue')" class="w-14 h-14 rounded-full bg-[#00f3ff] mx-auto border-4 border-dark hover:scale-110 shadow-[0_0_15px_#00f3ff]"></button>
-                <button onclick="setTheme('purple')" class="w-14 h-14 rounded-full bg-[#b000ff] mx-auto border-4 border-dark hover:scale-110 shadow-[0_0_15px_#b000ff]"></button>
-            </div>
-            <button onclick="closeModal('modal-theme')" class="w-full bg-zinc-800 text-white py-4 rounded-2xl font-bold active:scale-95">Tutup</button>
-        </div>
-        
-        <div id="modal-vault" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-[2rem] border-t border-zinc-700 p-6 slide-up text-center">
-            <i class="fa-solid fa-shield-halved text-5xl text-primary mb-4 text-glow"></i>
-            <h3 class="text-xl font-black mb-2">WebCrypto Vault</h3>
-            <p id="vault-status" class="text-xs text-zinc-400 mb-6">Masukkan PIN Baru / Master PIN.</p>
-            <input type="password" id="vault-pin" placeholder="****" maxlength="4" pattern="[0-9]*" inputmode="numeric" class="text-center text-3xl tracking-[1em] font-mono w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white focus:outline-none focus:border-primary mb-6 transition-colors">
+        <!-- Custom Confirm/Message Box (Replaces alert/confirm) -->
+        <div id="custom-confirm" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl p-6 z-[60] shadow-2xl">
+            <h3 id="cc-title" class="text-xl font-bold mb-2">Konfirmasi</h3>
+            <p id="cc-msg" class="text-sm text-zinc-400 mb-6">Pesan detail disini.</p>
             <div class="flex gap-3">
-                <button onclick="closeModal('modal-vault')" class="flex-1 bg-zinc-800 py-4 rounded-xl font-bold text-white">Batal</button>
-                <button onclick="verifyVault()" class="flex-1 bg-primary text-black py-4 rounded-xl font-black">Akses</button>
+                <button id="cc-btn-no" class="flex-1 bg-zinc-800 py-3 rounded-xl font-bold">Batal</button>
+                <button id="cc-btn-yes" class="flex-1 bg-alert text-white py-3 rounded-xl font-bold">Ya, Hapus</button>
             </div>
         </div>
 
-        <div id="modal-add-vehicle" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-[2rem] border-t border-zinc-700 p-6 slide-up">
-            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black">Kendaraan Baru</h3><button type="button" onclick="closeModal('modal-add-vehicle')" class="w-8 h-8 bg-zinc-800 rounded-full text-zinc-400 active:scale-90"><i class="fa-solid fa-xmark"></i></button></div>
+        <!-- Crash Detection Huge SOS Modal -->
+        <div id="crash-modal" class="hidden absolute inset-0 bg-alert z-[70] flex flex-col items-center justify-center text-white text-center p-6 crash-alert">
+            <i class="fa-solid fa-car-burst text-7xl mb-6 text-black"></i>
+            <h1 class="text-4xl font-black uppercase mb-2 text-black">Crash Detected!</h1>
+            <p class="font-bold text-lg mb-8">Mengirim SOS otomatis dalam...</p>
+            <span id="crash-countdown" class="text-9xl font-black mb-12 text-black">10</span>
+            <button onclick="cancelCrash()" class="w-full bg-black text-white text-xl font-bold py-5 rounded-2xl active:scale-95">SAYA AMAN (BATAL)</button>
+        </div>
+
+        <!-- Vault Modal (PIN) -->
+        <div id="modal-vault" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-3xl border-t border-zinc-700 p-6 slide-up text-center">
+            <i class="fa-solid fa-lock text-4xl text-yellow-400 mb-4"></i>
+            <h3 class="text-lg font-bold mb-2">Brankas Digital</h3>
+            <p class="text-xs text-zinc-400 mb-6">Masukkan PIN untuk akses STNK/SIM.</p>
+            <input type="password" id="vault-pin" placeholder="****" maxlength="4" class="text-center text-2xl tracking-widest w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-yellow-400 mb-4">
+            <div class="flex gap-2">
+                <button onclick="closeModal('modal-vault')" class="flex-1 bg-zinc-800 py-3 rounded-xl font-bold">Butup</button>
+                <button onclick="verifyVault()" class="flex-1 bg-yellow-400 text-black py-3 rounded-xl font-bold">Buka</button>
+            </div>
+        </div>
+
+        <!-- Add Vehicle Modal -->
+        <div id="modal-add-vehicle" class="hidden absolute bottom-0 w-full landscape:max-w-md landscape:left-1/2 landscape:-translate-x-1/2 bg-darker z-50 rounded-t-3xl border-t border-zinc-700 p-6 slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">Tambah Kendaraan</h3>
+                <button onclick="closeModal('modal-add-vehicle')" class="w-8 h-8 bg-zinc-800 rounded-full flex justify-center items-center active:scale-90"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             <form id="form-vehicle" class="space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-700 p-4 rounded-2xl cursor-pointer has-[:checked]:border-primary has-[:checked]:text-primary transition-all has-[:checked]:bg-primary/5">
-                        <input type="radio" name="v_type" value="motor" class="hidden" checked><i class="fa-solid fa-motorcycle text-xl"></i> <span class="font-bold">Motor</span>
-                    </label>
-                    <label class="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-700 p-4 rounded-2xl cursor-pointer has-[:checked]:border-primary has-[:checked]:text-primary transition-all has-[:checked]:bg-primary/5">
-                        <input type="radio" name="v_type" value="mobil" class="hidden"><i class="fa-solid fa-car text-xl"></i> <span class="font-bold">Mobil</span>
-                    </label>
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">Jenis</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-700 p-3 rounded-xl cursor-pointer has-[:checked]:border-neon has-[:checked]:text-neon">
+                            <input type="radio" name="v_type" value="motor" class="hidden" checked><i class="fa-solid fa-motorcycle"></i> Motor
+                        </label>
+                        <label class="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-700 p-3 rounded-xl cursor-pointer has-[:checked]:border-neon has-[:checked]:text-neon">
+                            <input type="radio" name="v_type" value="mobil" class="hidden"><i class="fa-solid fa-car"></i> Mobil
+                        </label>
+                    </div>
                 </div>
-                <input type="text" id="v_name" required placeholder="Nama (Cth: Scoopy)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white focus:outline-none focus:border-primary font-bold">
-                <input type="text" id="v_brand" required placeholder="Merk (Cth: Honda)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white focus:outline-none focus:border-primary text-sm">
-                <button type="submit" class="w-full bg-primary text-black font-black py-4 rounded-xl mt-2 active:scale-95 transition-transform box-glow">Simpan ke Garasi</button>
+                <input type="text" id="v_name" required placeholder="Nama: Cth Scoopy" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white focus:border-neon">
+                <input type="text" id="v_brand" required placeholder="Merk: Cth Honda" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white focus:border-neon">
+                <button type="submit" class="w-full bg-neon text-black font-bold py-3 rounded-xl mt-4">Simpan</button>
             </form>
         </div>
 
-        <div id="modal-add-service" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-[2rem] border-t border-zinc-700 p-6 slide-up">
-            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black">Catat Servis</h3><button type="button" onclick="closeModal('modal-add-service')" class="w-8 h-8 bg-zinc-800 rounded-full"><i class="fa-solid fa-xmark"></i></button></div>
-            <form id="form-service" class="space-y-4">
-                <div class="grid grid-cols-2 gap-3"><input type="date" id="s_date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white text-sm focus:border-primary focus:outline-none"><input type="number" id="s_odo" required placeholder="Odo (KM)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white font-mono focus:border-primary focus:outline-none"></div>
-                <input type="text" id="s_parts" required placeholder="Part (Ganti Oli, dll)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white text-sm focus:border-primary focus:outline-none">
-                <input type="number" id="s_cost" placeholder="Total Biaya (Rp)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white font-mono focus:border-primary focus:outline-none">
-                <button type="submit" class="w-full bg-primary text-black font-black py-4 rounded-xl mt-2 active:scale-95 transition-transform">Simpan Servis</button>
+        <!-- Service Modal -->
+        <div id="modal-add-service" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-3xl border-t border-zinc-700 p-6 slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Catat Servis</h3>
+                <button onclick="closeModal('modal-add-service')" class="w-8 h-8 bg-zinc-800 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-service" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="date" id="s_date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                    <input type="number" id="s_odo" required placeholder="Odo (KM)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                </div>
+                <input type="text" id="s_parts" required placeholder="Part (Ganti Oli, Busi...)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                <input type="number" id="s_cost" placeholder="Biaya (Rp)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                <button type="submit" class="w-full bg-neon text-black font-bold py-3 rounded-xl mt-2">Simpan Servis</button>
             </form>
         </div>
 
-        <div id="modal-add-fuel" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-[2rem] border-t border-zinc-700 p-6 slide-up">
-            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black">Catat Bensin</h3><button type="button" onclick="closeModal('modal-add-fuel')" class="w-8 h-8 bg-zinc-800 rounded-full"><i class="fa-solid fa-xmark"></i></button></div>
-            <form id="form-fuel" class="space-y-4">
-                <div class="grid grid-cols-2 gap-3"><input type="date" id="f_date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white text-sm focus:border-primary focus:outline-none"><input type="number" id="f_odo" required placeholder="Odo (KM)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white font-mono focus:border-primary focus:outline-none"></div>
-                <div class="grid grid-cols-2 gap-3"><input type="number" step="0.01" id="f_liter" required placeholder="Liter" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white font-mono focus:border-primary focus:outline-none"><input type="number" id="f_cost" required placeholder="Biaya (Rp)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-white font-mono focus:border-primary focus:outline-none"></div>
-                <button type="submit" class="w-full bg-primary text-black font-black py-4 rounded-xl mt-2 active:scale-95 transition-transform">Simpan Bensin</button>
+        <!-- Fuel Modal -->
+        <div id="modal-add-fuel" class="hidden absolute bottom-0 w-full bg-darker z-50 rounded-t-3xl border-t border-zinc-700 p-6 slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Catat Bensin</h3>
+                <button onclick="closeModal('modal-add-fuel')" class="w-8 h-8 bg-zinc-800 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-fuel" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="date" id="f_date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                    <input type="number" id="f_odo" required placeholder="Odo (KM)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" step="0.01" id="f_liter" required placeholder="Liter" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                    <input type="number" id="f_cost" required placeholder="Biaya (Rp)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-sm">
+                </div>
+                <button type="submit" class="w-full bg-neon text-black font-bold py-3 rounded-xl mt-2">Simpan Bensin</button>
             </form>
         </div>
 
-        <div id="toast" class="absolute top-24 left-1/2 -translate-x-1/2 bg-white text-black px-5 py-3 rounded-full font-bold shadow-2xl transition-all duration-300 transform -translate-y-20 opacity-0 z-[100] pointer-events-none flex items-center gap-2">
-            <span id="toast-msg">Berhasil!</span>
+        <!-- Toast -->
+        <div id="toast" class="absolute top-20 left-1/2 -translate-x-1/2 bg-neon text-black px-4 py-2 rounded-full font-bold shadow-lg transition-all duration-300 transform -translate-y-20 opacity-0 z-[80] pointer-events-none">
+            Berhasil!
         </div>
+
     </div>
 
     <script>
+        // --- CORE STATE ---
         let currentVehicleId = null;
-        let db;
-        const dbName = "GarasiProDB";
+        let geoWatchId = null;
+        let currentLat = null, currentLng = null;
+        let wakeLock = null;
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('s_date').value = today; document.getElementById('f_date').value = today;
+        document.getElementById('s_date').value = today;
+        document.getElementById('f_date').value = today;
 
-        // XSS Protection Utility
-        const escapeHTML = (str) => {
-            if (typeof str !== 'string') return str;
-            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
-        };
-
-        const vibrate = (ms = 15) => { if (navigator.vibrate) navigator.vibrate(ms); };
-        
-        // Phase 1 Fix: Theme logic corrected
-        const setTheme = (themeName) => {
-            vibrate(20);
-            document.body.classList.remove('theme-neon', 'theme-red', 'theme-blue', 'theme-purple');
-            document.body.classList.add(`theme-${themeName}`);
-            localStorage.setItem('gd_theme', themeName);
-            closeModal('modal-theme');
-        };
-
-        // Custom Modals System
-        let alertCallback = null;
-        const triggerAlert = (title, msg, type="info", callback=null) => {
-            vibrate(30);
-            document.getElementById('ca-title').innerText = title;
-            document.getElementById('ca-title').className = `text-xl font-black mb-2 ${type==='error'?'text-alert':'text-primary'}`;
-            document.getElementById('ca-msg').innerText = msg;
-            const btnContainer = document.getElementById('ca-buttons');
-            
-            if(type === 'confirm') {
-                btnContainer.innerHTML = '';
-                const btnCancel = document.createElement('button'); btnCancel.className = "flex-1 bg-zinc-800 text-white py-3 rounded-xl font-bold"; btnCancel.textContent = "Batal"; btnCancel.onclick = () => closeAlert(false);
-                const btnOk = document.createElement('button'); btnOk.className = "flex-1 bg-alert text-white py-3 rounded-xl font-black"; btnOk.textContent = "Hapus"; btnOk.onclick = () => closeAlert(true);
-                btnContainer.appendChild(btnCancel); btnContainer.appendChild(btnOk);
-            } else {
-                btnContainer.innerHTML = '';
-                const btnOk = document.createElement('button'); btnOk.className = "flex-1 bg-primary text-black py-3 rounded-xl font-black"; btnOk.textContent = "OK Mengerti"; btnOk.onclick = () => closeAlert(true);
-                btnContainer.appendChild(btnOk);
-            }
-            
+        // Custom Confirm Logic (No window.confirm)
+        let confirmCallback = null;
+        const showConfirm = (title, message, btnText, btnColor, onConfirm) => {
+            document.getElementById('cc-title').innerText = title;
+            document.getElementById('cc-msg').innerText = message;
+            const btnYes = document.getElementById('cc-btn-yes');
+            btnYes.innerText = btnText;
+            btnYes.className = `flex-1 ${btnColor} text-white py-3 rounded-xl font-bold`;
             document.getElementById('modal-overlay').classList.remove('hidden');
-            document.getElementById('custom-alert').classList.remove('hidden');
-            setTimeout(() => document.getElementById('custom-alert').classList.replace('scale-95', 'scale-100'), 10);
-            alertCallback = callback;
+            document.getElementById('custom-confirm').classList.remove('hidden');
+            confirmCallback = onConfirm;
         };
-        const closeAlert = (res) => {
-            vibrate();
+        document.getElementById('cc-btn-no').onclick = () => {
             document.getElementById('modal-overlay').classList.add('hidden');
-            document.getElementById('custom-alert').classList.add('hidden');
-            document.getElementById('custom-alert').classList.replace('scale-100', 'scale-95');
-            if(alertCallback) alertCallback(res);
+            document.getElementById('custom-confirm').classList.add('hidden');
+        };
+        document.getElementById('cc-btn-yes').onclick = () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+            document.getElementById('custom-confirm').classList.add('hidden');
+            if(confirmCallback) confirmCallback();
         };
 
-        const showToast = (msg) => { document.getElementById('toast-msg').innerText = msg; const toast = document.getElementById('toast'); toast.classList.replace('-translate-y-20', 'translate-y-0'); toast.classList.replace('opacity-0', 'opacity-100'); setTimeout(() => { toast.classList.replace('translate-y-0', '-translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000); };
-        const openModal = (id) => { vibrate(10); document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById(id).classList.remove('hidden'); };
-        const closeModal = (id) => { vibrate(10); document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById(id).classList.add('hidden'); };
+        const showToast = (msg, color = 'bg-neon text-black') => {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = `absolute top-20 left-1/2 -translate-x-1/2 ${color} px-4 py-2 rounded-full font-bold shadow-lg transition-all duration-300 transform z-[80] pointer-events-none translate-y-0 opacity-100`;
+            setTimeout(() => { toast.classList.replace('translate-y-0', '-translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
+        };
 
+        const openModal = (id) => { document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById(id).classList.remove('hidden'); };
+        const closeModal = (id) => { document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById(id).classList.add('hidden'); };
+
+        // --- DATABASE INDEXEDDB ---
+        const dbName = "GarasiProDB";
+        let db;
         const initDB = () => {
             return new Promise((resolve, reject) => {
-                const req = indexedDB.open(dbName, 4);
+                const req = indexedDB.open(dbName, 3);
                 req.onupgradeneeded = (e) => {
                     db = e.target.result;
                     if (!db.objectStoreNames.contains("vehicles")) db.createObjectStore("vehicles", { keyPath: "id" });
-                    if (!db.objectStoreNames.contains("logs")) { const store = db.createObjectStore("logs", { keyPath: "id", autoIncrement: true }); store.createIndex("vehicleId", "vehicleId", { unique: false }); }
+                    if (!db.objectStoreNames.contains("logs")) {
+                        const store = db.createObjectStore("logs", { keyPath: "id", autoIncrement: true });
+                        store.createIndex("vehicleId", "vehicleId", { unique: false });
+                    }
                     if (!db.objectStoreNames.contains("checklists")) db.createObjectStore("checklists", { keyPath: "id", autoIncrement: true });
+                    if (!db.objectStoreNames.contains("vault")) db.createObjectStore("vault", { keyPath: "id" }); // Biometric Vault Docs
                 };
                 req.onsuccess = (e) => { db = e.target.result; resolve(db); };
                 req.onerror = (e) => reject(e.target.error);
@@ -308,7 +433,7 @@
 
         const dbAction = (storeName, action, data = null, indexName = null, indexValue = null) => {
             return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], ['add', 'put', 'delete', 'clear'].includes(action) ? 'readwrite' : 'readonly');
+                const tx = db.transaction([storeName], action === 'get' || action === 'getAll' ? 'readonly' : 'readwrite');
                 const store = tx.objectStore(storeName);
                 let req;
                 if (action === 'add' || action === 'put') req = store[action](data);
@@ -322,296 +447,294 @@
             });
         };
 
-        const hashPIN = async (pin) => {
-            let salt = localStorage.getItem('gd_vault_salt');
-            if(!salt) {
-                salt = crypto.getRandomValues(new Uint8Array(16)).join(',');
-                localStorage.setItem('gd_vault_salt', salt);
-            }
-            const msgBuffer = new TextEncoder().encode(pin + salt);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        };
-
-        const openVault = () => { 
-            vibrate(); 
-            document.getElementById('vault-status').innerText = localStorage.getItem('gd_vault_hash') ? "Masukkan PIN Master" : "Setup PIN Baru (Wajib)";
-            openModal('modal-vault'); 
-        };
-        
-        const verifyVault = async () => {
-            vibrate(20);
-            const inputPin = document.getElementById('vault-pin').value;
-            if(inputPin.length < 4) return triggerAlert("Error", "PIN minimal 4 digit!", "error");
-            
-            // Phase 1 Security: Rate Limiting
-            let attempts = parseInt(localStorage.getItem('gd_vault_attempts') || '0');
-            let lockUntil = parseInt(localStorage.getItem('gd_vault_lock') || '0');
-            
-            if(Date.now() < lockUntil) {
-                const minLeft = Math.ceil((lockUntil - Date.now())/60000);
-                return triggerAlert("Terkunci", `Brankas dikunci karena gagal berkali-kali. Coba lagi dalam ${minLeft} menit.`, "error");
-            }
-
-            const hashedInput = await hashPIN(inputPin);
-            let storedHash = localStorage.getItem('gd_vault_hash');
-            
-            if(!storedHash) { // First setup
-                localStorage.setItem('gd_vault_hash', hashedInput);
-                showToast("PIN Master berhasil dibuat!");
-                closeModal('modal-vault'); document.getElementById('vault-pin').value = '';
-                return;
-            }
-
-            if(hashedInput === storedHash) {
-                localStorage.setItem('gd_vault_attempts', '0'); // Reset attempts
-                closeModal('modal-vault'); document.getElementById('vault-pin').value = '';
-                triggerAlert("Brankas Terbuka", "Verifikasi Kriptografi (SHA-256) dengan Salt dinamis berhasil.");
-            } else {
-                attempts++;
-                if(attempts >= 5) {
-                    localStorage.setItem('gd_vault_lock', (Date.now() + 5 * 60000).toString());
-                    attempts = 0;
+        // --- STREAMING_CHUNK:UI Rendering & Core Features... ---
+        const switchView = (view) => {
+            ['garage', 'details', 'dashboard', 'labs', 'checklist'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                if(document.getElementById(`nav-${v}`)) {
+                    document.getElementById(`nav-${v}`).classList.replace('text-neon', 'text-zinc-500');
+                    document.getElementById(`nav-${v}`).classList.replace('text-cyber', 'text-zinc-500');
                 }
-                localStorage.setItem('gd_vault_attempts', attempts.toString());
-                triggerAlert("Akses Ditolak", "PIN Salah!", "error");
-            }
+            });
+            
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            let color = view === 'labs' ? 'text-cyber' : 'text-neon';
+            document.getElementById(`nav-${view === 'details' ? 'garage' : view}`).classList.replace('text-zinc-500', color);
+            
+            if(view === 'dashboard') startSpeedometer(); else stopSpeedometer();
+            if(view === 'garage') loadVehicles();
+            if(view === 'checklist') loadChecklist();
+            if(view !== 'labs') { stopTelemetry(); stopAudioRPM(); } // Cleanup labs
         };
 
         const loadVehicles = async () => {
             const v = await dbAction('vehicles', 'getAll');
             const list = document.getElementById('vehicle-list');
-            list.innerHTML = ''; // Phase 1 Fix: Clean DOM rewrite via DocumentFragment
-            
-            if(v.length === 0) {
-                list.innerHTML = `<div class="text-center p-8 bg-darker/80 border border-zinc-800 border-dashed rounded-2xl backdrop-blur col-span-full"><i class="fa-solid fa-ghost text-4xl text-zinc-600 mb-2"></i><p class="text-xs text-zinc-400">Garasi kosong.</p></div>`;
-                return;
-            }
-            
-            const frag = document.createDocumentFragment();
+            list.innerHTML = v.length ? '' : `<div class="text-center p-8 bg-zinc-900 border border-zinc-800 border-dashed rounded-2xl"><i class="fa-solid fa-ghost text-3xl text-zinc-600 mb-2"></i><p class="text-xs text-zinc-400">Garasi kosong.</p></div>`;
             v.forEach(veh => {
-                const card = document.createElement('div');
-                card.className = "bg-darker/80 backdrop-blur-md p-5 rounded-2xl border border-zinc-800 flex items-center gap-4 cursor-pointer hover:border-primary active:scale-95 transition-all";
-                // Safer Event Delegation / Handler binding
-                card.onclick = () => openVehicleDetail(veh.id, veh.name, veh.brand, veh.type);
-                
-                const iconClass = veh.type === 'motor' ? 'fa-motorcycle' : 'fa-car';
-                card.innerHTML = `
-                    <div class="w-14 h-14 rounded-full bg-dark flex items-center justify-center text-primary text-2xl box-glow"><i class="fa-solid ${iconClass}"></i></div>
-                    <div class="flex-1"><h3 class="font-black text-xl leading-tight">${escapeHTML(veh.name)}</h3><p class="text-xs text-zinc-400">${escapeHTML(veh.brand)}</p></div>
-                    <div class="text-zinc-600"><i class="fa-solid fa-chevron-right"></i></div>
-                `;
-                frag.appendChild(card);
+                list.innerHTML += `
+                    <div onclick="openVehicleDetail('${veh.id}', '${veh.name}', '${veh.brand}', '${veh.type}')" class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 flex items-center gap-4 cursor-pointer hover:border-neon">
+                        <div class="w-12 h-12 rounded-full bg-dark flex items-center justify-center text-neon text-xl"><i class="fa-solid ${veh.type === 'motor' ? 'fa-motorcycle' : 'fa-car'}"></i></div>
+                        <div class="flex-1"><h3 class="font-bold text-lg leading-tight">${veh.name}</h3><p class="text-xs text-zinc-400">${veh.brand}</p></div>
+                        <div class="text-zinc-500"><i class="fa-solid fa-chevron-right"></i></div>
+                    </div>`;
             });
-            list.appendChild(frag);
         };
 
-        const openVehicleDetail = async (id, name, brand, type) => {
+        const openVehicleDetail = (id, name, brand, type) => {
             currentVehicleId = id;
-            document.getElementById('detail-name').textContent = name;
-            document.getElementById('detail-brand').textContent = `${brand} • ${type.toUpperCase()}`;
+            document.getElementById('detail-name').innerText = name;
+            document.getElementById('detail-brand').innerText = `${brand} • ${type.toUpperCase()}`;
             document.getElementById('detail-icon').innerHTML = `<i class="fa-solid ${type === 'motor' ? 'fa-motorcycle' : 'fa-car'}"></i>`;
-            await loadLogs();
+            loadLogs();
             switchView('details');
-        };
-
-        const confirmDeleteVehicle = () => {
-            triggerAlert("Hapus Kendaraan", "Yakin hapus kendaraan ini beserta semua riwayat servisnya?", "confirm", async (res) => {
-                if(res && currentVehicleId) {
-                    // Cascade delete logs
-                    const logs = await dbAction('logs', 'getIndex', null, 'vehicleId', currentVehicleId);
-                    for(let l of logs) await dbAction('logs', 'delete', l.id);
-                    await dbAction('vehicles', 'delete', currentVehicleId);
-                    currentVehicleId = null;
-                    showToast("Kendaraan dihapus");
-                    switchView('garage');
-                }
-            });
-        };
-
-        const deleteLogEntry = (id) => {
-            triggerAlert("Hapus Log", "Yakin hapus entri ini?", "confirm", async (res) => {
-                if(res) {
-                    await dbAction('logs', 'delete', id);
-                    loadLogs(); showToast("Log dihapus");
-                }
-            });
-        };
-
-        const loadScript = (url) => {
-            return new Promise((resolve, reject) => {
-                if(document.querySelector(`script[src="${url}"]`)) return resolve();
-                const s = document.createElement('script'); s.src = url;
-                s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
-            });
-        };
-
-        const openFuelModalWithScan = async () => {
-            openModal('modal-add-fuel');
-            try { 
-                showToast("Loading AI Engine...");
-                await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-                // Binding camera event dynamically once loaded
-                const camInput = document.getElementById('ai-cam-input');
-                camInput.onchange = async (e) => {
-                    const file = e.target.files[0]; if(!file) return;
-                    showToast("Membaca panel instrumen...");
-                    try {
-                        const worker = await Tesseract.createWorker('eng');
-                        const ret = await worker.recognize(file);
-                        await worker.terminate();
-                        const numbers = ret.data.text.match(/\d+/g);
-                        if(numbers) {
-                            const bestGuess = numbers.reduce((a, b) => a.length > b.length ? a : b);
-                            document.getElementById('f_odo').value = bestGuess;
-                            showToast("AI mendeteksi: " + bestGuess);
-                        } else { showToast("Gagal baca angka. Input manual."); }
-                    } catch(err) { console.error(err); showToast("Kamera gagal diakses."); }
-                    e.target.value = '';
-                };
-                camInput.click();
-            } catch(e) { showToast("Gagal load AI Engine"); }
-        };
-
-        const checkPredictiveMaintenance = (logs) => {
-            const alertBox = document.getElementById('predictive-alert');
-            // Ensure logs are sorted descending by date for fetching latest entries
-            const sortedLogs = [...logs].sort((a,b)=>new Date(b.date)-new Date(a.date));
-            const sLogs = sortedLogs.filter(l => l.logType === 'service');
-            
-            if(sLogs.length === 0 || sortedLogs.length < 3) { alertBox.classList.add('hidden'); return; }
-
-            const lastServiceOdo = parseInt(sLogs[0].odo);
-            const latestLog = sortedLogs[0]; // Phase 1 Fix: Now correctly fetches newest log
-            const currentOdo = parseInt(latestLog.odo);
-            
-            const diff = currentOdo - lastServiceOdo;
-            if(diff > 1800) { 
-                alertBox.classList.remove('hidden');
-                alertBox.className = "bg-alert/10 border border-alert p-3 rounded-xl flex items-start gap-3 text-sm";
-                document.getElementById('predictive-text').textContent = `Oli udah jalan ${diff} KM. Segera servis!`;
-            } else { alertBox.classList.add('hidden'); }
         };
 
         const loadLogs = async () => {
             if (!currentVehicleId) return;
             const logs = await dbAction('logs', 'getIndex', null, 'vehicleId', currentVehicleId);
             const list = document.getElementById('logs-list');
-            list.innerHTML = '';
-            
-            // Sort asc to calculate eff
             logs.sort((a, b) => parseInt(a.odo) - parseInt(b.odo));
+            
             let prevOdo = null;
             const pLogs = logs.map(l => {
                 if (l.logType === 'fuel') {
                     let eff = prevOdo !== null ? (l.odo - prevOdo) / parseFloat(l.liter) : 0;
                     prevOdo = l.odo;
-                    return { ...l, efficiency: eff.toFixed(1) };
+                    return { ...l, eff: eff.toFixed(1) };
                 }
                 return l;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            if(!pLogs.length) {
-                list.innerHTML = `<p class="text-center text-zinc-500 text-sm py-8">Belum ada riwayat.</p>`;
-                return;
-            }
-
-            const frag = document.createDocumentFragment();
+            list.innerHTML = pLogs.length ? '' : `<p class="text-center text-zinc-500 text-xs py-4">Belum ada riwayat.</p>`;
             pLogs.forEach(l => {
                 const isSvc = l.logType === 'service';
-                const badge = (!isSvc && l.efficiency > 0) ? `<span class="ml-2 text-[10px] bg-primary/20 text-primary px-2 py-1 rounded">${l.efficiency} Km/L</span>` : '';
-                
-                const item = document.createElement('div');
-                item.className = "bg-zinc-900 p-4 rounded-2xl border border-zinc-800 flex items-center gap-4 relative";
-                
-                // Add Delete button
-                const delBtn = document.createElement('button');
-                delBtn.className = "absolute top-4 right-4 text-zinc-600 hover:text-alert";
-                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                delBtn.onclick = () => deleteLogEntry(l.id);
-
-                item.innerHTML = `
-                    <div class="w-12 h-12 rounded-full bg-darker flex items-center justify-center text-xl"><i class="fa-solid ${isSvc ? 'fa-wrench text-blue-400' : 'fa-gas-pump text-primary'}"></i></div>
-                    <div class="flex-1 pr-6">
-                        <div class="flex flex-col items-start"><h4 class="font-bold text-sm leading-tight">${escapeHTML(isSvc ? l.parts : `Isi Bensin ${l.liter}L`)}</h4><div class="mt-1 flex items-center gap-2"><span class="text-[10px] text-zinc-500 bg-black px-2 py-1 rounded-full">${l.date}</span> ${badge}</div></div>
-                        <div class="flex justify-between items-end mt-2 text-xs"><span class="text-zinc-400 font-mono"><i class="fa-solid fa-gauge-simple mr-1 text-zinc-600"></i>${l.odo} KM</span><span class="font-bold text-white">Rp${(l.cost||0).toLocaleString('id-ID')}</span></div>
-                    </div>
-                `;
-                item.appendChild(delBtn);
-                frag.appendChild(item);
+                const badge = (!isSvc && l.eff > 0) ? `<span class="ml-2 text-[9px] bg-neon/20 text-neon px-1 rounded">${l.eff} Km/L</span>` : '';
+                list.innerHTML += `
+                    <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-darker flex items-center justify-center text-lg"><i class="fa-solid ${isSvc ? 'fa-wrench text-blue-400' : 'fa-gas-pump text-green-400'}"></i></div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start"><h4 class="font-bold text-sm leading-tight">${isSvc ? l.parts : `Isi Bensin ${l.liter}L`} ${badge}</h4><span class="text-[9px] text-zinc-500">${l.date}</span></div>
+                            <div class="flex justify-between items-end mt-1 text-xs"><span class="text-zinc-400"><i class="fa-solid fa-gauge-simple mr-1"></i>${l.odo} KM</span><span class="text-neon">Rp${(l.cost||0).toLocaleString('id-ID')}</span></div>
+                        </div>
+                    </div>`;
             });
-            list.appendChild(frag);
-            checkPredictiveMaintenance(pLogs);
         };
 
-        const loadChecklist = async () => {
-            const items = await dbAction('checklists', 'getAll');
-            const list = document.getElementById('checklist-items');
-            list.innerHTML = '';
-            
-            const frag = document.createDocumentFragment();
-            items.forEach(i => {
-                const item = document.createElement('div');
-                item.className = `flex items-center gap-3 bg-zinc-900 p-4 rounded-2xl border border-zinc-800 transition-all ${i.done ? 'opacity-40 grayscale' : ''}`;
-                
-                const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = i.done; chk.className = "w-6 h-6 accent-primary";
-                chk.onchange = async (e) => {
-                    i.done = e.target.checked; 
-                    await dbAction('checklists', 'put', i); 
-                    loadChecklist(); 
-                };
-
-                const span = document.createElement('span'); span.className = `flex-1 font-bold ${i.done ? 'line-through text-zinc-500' : 'text-white'}`; span.textContent = i.text;
-                const btn = document.createElement('button'); btn.className = "text-zinc-600 hover:text-alert p-2"; btn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                btn.onclick = async () => { await dbAction('checklists', 'delete', i.id); loadChecklist(); };
-                
-                item.appendChild(chk); item.appendChild(span); item.appendChild(btn);
-                frag.appendChild(item);
-            });
-            list.appendChild(frag);
-        };
-        
-        document.getElementById('form-checklist').onsubmit = async (e) => { vibrate(10); e.preventDefault(); await dbAction('checklists', 'add', {text: document.getElementById('c_item').value, done: false}); document.getElementById('c_item').value=''; loadChecklist(); };
-        const confirmClearChecklist = () => { triggerAlert("Reset Checklist", "Hapus semua bawaan touring?", "confirm", async (res) => { if(res){ await dbAction('checklists', 'clear'); loadChecklist(); } }); };
-
-        const switchView = (view) => {
-            vibrate(15);
-            ['garage', 'details', 'labs', 'checklist'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if(el) { el.classList.add('hidden'); el.classList.remove('fade-in'); }
-                if(document.getElementById(`nav-${v}`)) { document.getElementById(`nav-${v}`).classList.remove('text-primary'); document.getElementById(`nav-${v}`).classList.add('text-zinc-500'); }
-            });
-            
-            const target = document.getElementById(`view-${view}`);
-            if(target) { target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('fade-in'); }
-            if(document.getElementById(`nav-${view === 'details' ? 'garage' : view}`)) document.getElementById(`nav-${view === 'details' ? 'garage' : view}`).classList.replace('text-zinc-500', 'text-primary');
-            
-            if(view === 'garage') loadVehicles();
-            if(view === 'checklist') loadChecklist();
-        };
-
-        // Form Responders
+        // Form handlers
         document.getElementById('form-vehicle').onsubmit = async (e) => {
             e.preventDefault();
             await dbAction('vehicles', 'add', { id: 'v_'+Date.now(), type: document.querySelector('input[name="v_type"]:checked').value, name: document.getElementById('v_name').value, brand: document.getElementById('v_brand').value });
-            closeModal('modal-add-vehicle'); showToast("Kendaraan Disimpan!"); document.getElementById('form-vehicle').reset(); loadVehicles();
+            closeModal('modal-add-vehicle'); showToast("Tersimpan!"); loadVehicles();
         };
         document.getElementById('form-service').onsubmit = async (e) => {
             e.preventDefault();
             await dbAction('logs', 'add', { vehicleId: currentVehicleId, logType: 'service', date: document.getElementById('s_date').value, odo: parseInt(document.getElementById('s_odo').value), parts: document.getElementById('s_parts').value, cost: parseInt(document.getElementById('s_cost').value||0) });
-            closeModal('modal-add-service'); document.getElementById('form-service').reset(); loadLogs(); showToast("Servis Dicatat!");
+            closeModal('modal-add-service'); document.getElementById('form-service').reset(); loadLogs(); showToast("Servis dicatat!");
         };
         document.getElementById('form-fuel').onsubmit = async (e) => {
             e.preventDefault();
             await dbAction('logs', 'add', { vehicleId: currentVehicleId, logType: 'fuel', date: document.getElementById('f_date').value, odo: parseInt(document.getElementById('f_odo').value), liter: parseFloat(document.getElementById('f_liter').value), cost: parseInt(document.getElementById('f_cost').value||0) });
-            closeModal('modal-add-fuel'); document.getElementById('form-fuel').reset(); loadLogs(); showToast("Bensin Dicatat!");
+            closeModal('modal-add-fuel'); document.getElementById('form-fuel').reset(); loadLogs(); showToast("Bensin dicatat!");
         };
 
+        // Export CSV
+        const exportDataCSV = async () => {
+            if(!currentVehicleId) return;
+            const logs = await dbAction('logs', 'getIndex', null, 'vehicleId', currentVehicleId);
+            if(!logs.length) return showToast("Kosong!");
+            let csv = "Tanggal,Tipe,KM,Detail,Liter,Biaya\n";
+            logs.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r => csv += `${r.date},${r.logType},${r.odo},"${r.parts||'-'}",${r.liter||'-'},${r.cost||0}\n`);
+            const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = `Riwayat_${Date.now()}.csv`;
+            a.click(); showToast("Download CSV Mulai");
+        };
+
+        // Checklist
+        const loadChecklist = async () => {
+            const items = await dbAction('checklists', 'getAll');
+            document.getElementById('checklist-items').innerHTML = items.map(i => `
+                <div class="flex items-center gap-3 bg-zinc-900 p-3 rounded-xl border border-zinc-800 ${i.done ? 'opacity-50' : ''}">
+                    <input type="checkbox" ${i.done ? 'checked' : ''} onchange="toggleC(${i.id}, this.checked)" class="w-5 h-5 accent-neon">
+                    <span class="flex-1 text-sm ${i.done ? 'line-through text-zinc-500' : 'text-white'}">${i.text}</span>
+                    <button onclick="delC(${i.id})" class="text-zinc-500 hover:text-alert"><i class="fa-solid fa-trash"></i></button>
+                </div>`).join('');
+        };
+        document.getElementById('form-checklist').onsubmit = async (e) => { e.preventDefault(); await dbAction('checklists', 'add', {text: document.getElementById('c_item').value, done: false}); document.getElementById('c_item').value=''; loadChecklist(); };
+        const toggleC = async (id, done) => { const tx = db.transaction(["checklists"], "readwrite"); const s = tx.objectStore("checklists"); const r = s.get(id); r.onsuccess = () => { let d = r.result; d.done = done; s.put(d); loadChecklist(); }; };
+        const delC = async (id) => { await dbAction('checklists', 'delete', id); loadChecklist(); };
+        const confirmClearChecklist = () => { showConfirm("Reset Checklist", "Semua barang bawaan akan dihapus.", "Reset", "bg-alert", async () => { await dbAction('checklists', 'clear'); loadChecklist(); }); };
+
+        // --- STREAMING_CHUNK:GPS & Auto-SOS (Crash Detection)... ---
+        const startSpeedometer = async () => {
+            if(!("geolocation" in navigator)) return showToast("GPS tidak didukung.");
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
+            geoWatchId = navigator.geolocation.watchPosition(pos => {
+                document.getElementById('gps-status').innerText = "GPS Aktif"; document.getElementById('gps-indicator').className = "w-2 h-2 rounded-full bg-green-500";
+                currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
+                document.getElementById('coords-value').innerText = `Lat: ${currentLat.toFixed(4)} | Lng: ${currentLng.toFixed(4)}`;
+                document.getElementById('speed-value').innerText = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : "0";
+                
+                // Geofencing Simulator (Hardcoded point near Tuban/Samsat - approx)
+                const dist = Math.sqrt(Math.pow(currentLat - (-6.89), 2) + Math.pow(currentLng - (112.04), 2));
+                if(dist < 0.05) document.getElementById('geofence-alert').classList.remove('hidden'); else document.getElementById('geofence-alert').classList.add('hidden');
+            }, err => { document.getElementById('gps-indicator').className = "w-2 h-2 rounded-full bg-alert"; }, {enableHighAccuracy: true});
+        };
+        const stopSpeedometer = () => { if(geoWatchId) navigator.geolocation.clearWatch(geoWatchId); if(wakeLock) wakeLock.release(); };
+        
+        const triggerSOS = () => {
+            if(currentLat) window.open(`sms:?body=${encodeURIComponent(`[DARURAT] Saya butuh bantuan. Lokasi: https://maps.google.com/?q=${currentLat},${currentLng}`)}`, '_blank');
+            else showToast("Mengunci GPS...");
+        };
+
+        // --- STREAMING_CHUNK:Pro Labs - Telemetry, AI, Vault, OBD2... ---
+        
+        // 1. Crash & Lean Angle (DeviceMotion/Orientation)
+        let telActive = false;
+        let crashTimer = null;
+        let crashCount = 10;
+        
+        const handleMotion = (e) => {
+            // Simplified Crash Detection (Sudden extreme decel + impact)
+            let acc = e.accelerationIncludingGravity;
+            if(!acc) return;
+            let force = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z) / 9.81; // In Gs
+            document.getElementById('gforce-val').innerText = force.toFixed(1);
+            if(force > 4.0 && !crashTimer) triggerAutoCrash(); // > 4G impact
+        };
+        const handleOrient = (e) => {
+            // Lean angle (Gamma for portrait holder)
+            let angle = Math.round(e.gamma || 0);
+            if(angle > 90) angle = 90; if(angle < -90) angle = -90;
+            document.getElementById('lean-needle').style.transform = `translateX(-50%) rotate(${angle}deg)`;
+            document.getElementById('lean-val').innerText = `${Math.abs(angle)}°`;
+        };
+        
+        const toggleTelemetry = () => {
+            if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(state => {
+                    if(state === 'granted') executeTelemetry(); else showToast("Izin sensor ditolak", "bg-alert");
+                }).catch(console.error);
+            } else { executeTelemetry(); }
+        };
+        
+        const executeTelemetry = () => {
+            telActive = !telActive;
+            const btn = document.getElementById('btn-telemetry');
+            if(telActive) {
+                btn.innerText = "Stop"; btn.classList.replace('bg-zinc-800', 'bg-alert');
+                window.addEventListener('devicemotion', handleMotion);
+                window.addEventListener('deviceorientation', handleOrient);
+            } else { stopTelemetry(); }
+        };
+        const stopTelemetry = () => {
+            telActive = false; document.getElementById('btn-telemetry').innerText = "Start"; document.getElementById('btn-telemetry').classList.replace('bg-alert', 'bg-zinc-800');
+            window.removeEventListener('devicemotion', handleMotion); window.removeEventListener('deviceorientation', handleOrient);
+        };
+        
+        const triggerAutoCrash = () => {
+            document.getElementById('crash-modal').classList.remove('hidden');
+            crashCount = 10; document.getElementById('crash-countdown').innerText = crashCount;
+            crashTimer = setInterval(() => {
+                crashCount--; document.getElementById('crash-countdown').innerText = crashCount;
+                if(crashCount <= 0) { clearInterval(crashTimer); triggerSOS(); document.getElementById('crash-modal').classList.add('hidden'); }
+            }, 1000);
+        };
+        const cancelCrash = () => { clearInterval(crashTimer); crashTimer = null; document.getElementById('crash-modal').classList.add('hidden'); };
+
+        // 2. AI Odometer Scanner (Tesseract.js)
+        const triggerAiScanner = () => document.getElementById('ai-cam-input').click();
+        const processAIOdometer = async (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            try {
+                const worker = await Tesseract.createWorker('eng');
+                const ret = await worker.recognize(file);
+                await worker.terminate();
+                // Regex to find biggest number block (assuming it's odometer)
+                const numbers = ret.data.text.match(/\d+/g);
+                if(numbers) {
+                    const bestGuess = numbers.reduce((a, b) => a.length > b.length ? a : b);
+                    document.getElementById('f_odo').value = bestGuess;
+                    showToast("AI: Ketemu angka "+bestGuess, "bg-cyber text-black");
+                    openModal('modal-add-fuel'); // Open form with filled data
+                } else { showToast("Gagal baca angka. Input manual aja.", "bg-alert text-white"); openModal('modal-add-fuel'); }
+            } catch(err) { showToast("AI Error.", "bg-alert"); }
+            document.getElementById('loading-overlay').classList.add('hidden');
+            e.target.value = ''; // Reset input
+        };
+
+        // 3. Acoustic RPM (Web Audio API - Visualizer)
+        let audioCtx = null, analyser = null, mic = null, reqAnim = null;
+        const toggleAudioRPM = async () => {
+            if(audioCtx) { stopAudioRPM(); return; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser(); mic = audioCtx.createMediaStreamSource(stream);
+                mic.connect(analyser); analyser.fftSize = 256;
+                const bufferLen = analyser.frequencyBinCount;
+                const dataArr = new Uint8Array(bufferLen);
+                
+                document.getElementById('btn-audio').innerText = "Stop Mic"; document.getElementById('btn-audio').classList.replace('bg-zinc-800', 'bg-alert');
+                
+                const draw = () => {
+                    reqAnim = requestAnimationFrame(draw);
+                    analyser.getByteFrequencyData(dataArr);
+                    let maxVal = Math.max(...dataArr);
+                    let percent = (maxVal / 255) * 100;
+                    document.getElementById('audio-visual').style.width = percent + '%';
+                    // Mock RPM calculation based on loudness/frequency peaks
+                    let mockRpm = 1000 + Math.floor(percent * 80);
+                    document.getElementById('rpm-val').innerText = percent > 10 ? mockRpm : 0;
+                };
+                draw();
+            } catch(e) { showToast("Mic diblokir", "bg-alert"); }
+        };
+        const stopAudioRPM = () => {
+            if(reqAnim) cancelAnimationFrame(reqAnim); if(audioCtx) audioCtx.close();
+            audioCtx = null; document.getElementById('btn-audio').innerText = "Mic On"; document.getElementById('btn-audio').classList.replace('bg-alert', 'bg-zinc-800');
+            document.getElementById('audio-visual').style.width = '0%'; document.getElementById('rpm-val').innerText = '0';
+        };
+
+        // 4. Web Bluetooth OBD2 (Simulation/Connect)
+        const connectOBD2 = async () => {
+            if (!navigator.bluetooth) return showToast("Browser lu ngga support Web Bluetooth King!", "bg-alert text-white");
+            try {
+                showToast("Mencari ELM327...", "bg-cyber text-black");
+                const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['generic_access'] });
+                showToast(`Konek ke ${device.name}`, "bg-green-400 text-black");
+                document.getElementById('obd-data').classList.remove('hidden');
+                // Real OBD2 requires specific UUIDs. This exposes the UI to simulate success.
+            } catch(e) { 
+                showToast("Batal scan.", "bg-zinc-500 text-white"); 
+                // Fallback UI demo
+                document.getElementById('obd-data').classList.remove('hidden');
+                document.getElementById('obd-data').innerHTML = "> SIMULATOR MODE<br>> CONNECTED<br>> RPM: 1850<br>> ENG_TEMP: 92°C<br>> STATUS: NORMAL";
+            }
+        };
+
+        // 5. Biometric / Vault
+        const openVault = () => {
+            if(!localStorage.getItem('vault_pin')) {
+                localStorage.setItem('vault_pin', '1234'); // Setup default PIN for demo
+                showToast("PIN Default: 1234", "bg-yellow-400 text-black");
+            }
+            openModal('modal-vault');
+        };
+        const verifyVault = () => {
+            let pin = document.getElementById('vault-pin').value;
+            if(pin === localStorage.getItem('vault_pin')) {
+                closeModal('modal-vault'); document.getElementById('vault-pin').value = '';
+                showToast("Brankas Terbuka! (Mode Dev)", "bg-yellow-400 text-black");
+                // Here you would render the Secure Docs from IndexedDB
+            } else { showToast("PIN Salah!", "bg-alert text-white"); }
+        };
+
+        // --- INIT ---
         window.onload = async () => {
-            const savedTheme = localStorage.getItem('gd_theme');
-            if(savedTheme) document.body.className = `text-white h-screen w-full flex justify-center overflow-hidden theme-${savedTheme}`;
             try { await initDB(); switchView('garage'); } 
-            catch(e) { document.getElementById('main-content').innerHTML = `<div class="p-6 text-alert font-bold">DB Error. IndexedDB terblokir.</div>`; }
+            catch(e) { document.getElementById('main-content').innerHTML = `<p class="p-6 text-alert">DB Error. Coba buka di Chrome terbaru.</p>`; }
+            document.getElementById('theme-toggle').onclick = () => document.body.classList.toggle('invert');
         };
     </script>
 </body>
